@@ -1,63 +1,39 @@
+/*
+ * main.cpp
+ *
+ *  Created on: 25 lis 2016
+ *      Author: Adam Tomaja
+ */
 #include <stddef.h>
-#include "main.h"
+
 #include "stm32l1xx.h"
-
-static __IO uint32_t TimingDelay;
-
-void Delay(__IO uint32_t nTime) {
-	TimingDelay = nTime;
-
-	while (TimingDelay != 0)
-		;
-}
-
-void TimingDelay_Decrement(void) {
-	if (TimingDelay != 0x00) {
-		TimingDelay--;
-	}
-}
-
-void send_char(char c) {
-	while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET)
-		;
-	USART_SendData(USART3, c);
-}
-
-void print(const char * string) {
-	while (*string) {
-		send_char(*(string++));
-	}
-}
-
-int usart_receive() {
-	if (USART_GetFlagStatus(USART3, USART_FLAG_RXNE)) {
-		return USART_ReceiveData(USART3);
-	}
-
-	return -1;
-}
-
-void debug_println(const char * text) {
-	int i = 0;
-	while (text[i] != 0) {
-		ITM_SendChar(text[i++]);
-	}
-
-	ITM_SendChar('\r');
-	ITM_SendChar('\n');
-}
+#include "usart/usart.h"
+#include "main.h"
 
 int main(void) {
+	init_clocks();
+	init_usart();
+	init_gpio();
+
+	print("Hello World from STM32!");
+	for (;;);
+}
+
+void init_clocks() {
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOC, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+}
 
+void init_usart() {
 	USART_InitTypeDef uart;
-
 	USART_StructInit(&uart);
 	USART_Init(USART3, &uart);
 	uart.USART_BaudRate = 9600;
 	USART_Cmd(USART3, ENABLE);
+}
 
+void init_gpio() {
+	// TX pin
 	GPIO_InitTypeDef txOutput;
 	GPIO_StructInit(&txOutput);
 	txOutput.GPIO_Pin = GPIO_Pin_10;
@@ -66,6 +42,7 @@ int main(void) {
 	txOutput.GPIO_OType = GPIO_OType_PP;
 	GPIO_Init(GPIOC, &txOutput);
 
+	// RX pin
 	GPIO_InitTypeDef rxInput;
 	GPIO_StructInit(&rxInput);
 	rxInput.GPIO_Pin = GPIO_Pin_11;
@@ -73,15 +50,9 @@ int main(void) {
 	rxInput.GPIO_Mode = GPIO_Mode_AF;
 	GPIO_Init(GPIOC, &rxInput);
 
+	// Configure alternative functions for pins
 	GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, GPIO_AF_USART3);
 	GPIO_PinAFConfig(GPIOC, GPIO_PinSource11, GPIO_AF_USART3);
-
-	print("Hello STM32!");
-
-	debug_println("Hello STM32!");
-
-	for (;;)
-		;
 }
 
 extern "C" {

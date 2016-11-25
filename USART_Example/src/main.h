@@ -8,6 +8,8 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
-void TimingDelay_Decrement();
+void init_clocks();
+void init_usart();
+void init_gpio();
 
 #endif /* MAIN_H_ */

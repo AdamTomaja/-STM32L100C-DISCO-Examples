@@ -1,0 +1,29 @@
+/*
+ * usart.cpp
+ *
+ *  Created on: 25 lis 2016
+ *      Author: Adam Tomaja
+ */
+#include "stm32l1xx.h"
+
+void send_char(char c) {
+	while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET)
+		;
+	USART_SendData(USART3, c);
+}
+
+void print(const char * string) {
+	while (*string) {
+		send_char(*(string++));
+	}
+}
+
+int usart_receive() {
+	if (USART_GetFlagStatus(USART3, USART_FLAG_RXNE)) {
+		return USART_ReceiveData(USART3);
+	}
+
+	return -1;
+}
+
+
